@@ -1559,7 +1559,7 @@ async function loadDeepLUsage(){
   usageBarInner.style.width='0%';
   usagePercent.textContent='';
   try{
-    const res=await fetch('/.netlify/functions/deepl-usage');
+    const res=await fetch('/.netlify/functions/usage');
     const data=await res.json().catch(()=>({}));
     if(!res.ok)throw new Error(data.error||'usage error');
     const count=Number(data.character_count||0);
