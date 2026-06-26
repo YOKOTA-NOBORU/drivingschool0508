@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>富山教習所向け DeepL翻訳アプリ</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>富山教習所向け DeepL翻訳アプリ</h1>
+    <p>日本語を入力して、DeepLで翻訳・音声再生します。</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <label for="targetLang">翻訳先言語</label>
+      <select id="targetLang">
+        <option value="VI">ベトナム語</option>
+        <option value="EN-US">英語</option>
+        <option value="ZH">中国語</option>
+        <option value="KO">韓国語</option>
+        <option value="PT-BR">ポルトガル語</option>
+        <option value="ID">インドネシア語</option>
+      </select>
+
+      <label for="jpText">日本語</label>
+      <textarea id="jpText" rows="5" placeholder="例：次の信号交差点を左に曲がってください"></textarea>
+
+      <div class="buttons">
+        <button id="translateBtn" type="button">翻訳する</button>
+        <button id="clearBtn" type="button" class="sub">クリア</button>
+      </div>
+
+      <div id="status" class="status">準備完了</div>
+    </section>
+
+    <section class="card result">
+      <h2>翻訳結果</h2>
+      <div id="translatedText" class="translated">ここに翻訳結果が表示されます。</div>
+      <button id="speakBtn" type="button" class="speak">音声で再生</button>
+    </section>
+
+    <section class="card phrases">
+      <h2>よく使う教習フレーズ</h2>
+      <button type="button" class="phrase">発進してください</button>
+      <button type="button" class="phrase">止まってください</button>
+      <button type="button" class="phrase">右に曲がってください</button>
+      <button type="button" class="phrase">左に曲がってください</button>
+      <button type="button" class="phrase">次の信号交差点を左に曲がってください</button>
+      <button type="button" class="phrase">安全確認をしてください</button>
+      <button type="button" class="phrase">もう一度やってみましょう</button>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

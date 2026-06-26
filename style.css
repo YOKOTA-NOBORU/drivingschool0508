@@ -1,0 +1,68 @@
+:root {
+  --blue: #1266f1;
+  --dark: #172033;
+  --bg: #f4f7fb;
+  --card: #ffffff;
+  --muted: #5d6b82;
+  --border: #d9e2ef;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--dark);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans JP", sans-serif;
+}
+header {
+  background: linear-gradient(135deg, #1266f1, #0a2f6d);
+  color: white;
+  padding: 18px 16px;
+}
+h1 { margin: 0; font-size: 22px; }
+header p { margin: 6px 0 0; font-size: 14px; opacity: .9; }
+main { padding: 16px; max-width: 760px; margin: 0 auto; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 8px rgba(20, 40, 80, .06);
+}
+label { display: block; font-weight: 700; margin: 0 0 8px; }
+select, textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 17px;
+  margin-bottom: 14px;
+  background: #fff;
+}
+textarea { resize: vertical; }
+.buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+button {
+  border: 0;
+  border-radius: 12px;
+  padding: 13px;
+  font-size: 17px;
+  font-weight: 800;
+  background: var(--blue);
+  color: white;
+}
+button.sub { background: #e8eef8; color: #123b75; }
+button.speak { width: 100%; margin-top: 12px; background: #13233d; }
+.status { margin-top: 12px; color: var(--muted); font-size: 14px; }
+.translated {
+  min-height: 64px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #eef5ff;
+  font-size: 22px;
+  font-weight: 800;
+  color: #083b83;
+  line-height: 1.5;
+}
+.phrases { display: grid; gap: 8px; }
+.phrases h2, .result h2 { margin-top: 0; }
+.phrase { background: #e8eef8; color: #123b75; text-align: left; }

@@ -1,0 +1,8 @@
+{
+  "name": "DeepL教習翻訳",
+  "short_name": "教習翻訳",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#1266f1"
+}
