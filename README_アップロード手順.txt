@@ -1,18 +1,3 @@
-GitHubアップロード手順
-
-1. このZIPを解凍します。
-2. GitHubのリポジトリを開きます。
-3. 既存の古いファイルを削除するか、同名ファイルは上書きします。
-4. 解凍後の中身をアップロードします。
-
-正しい構成:
-index.html
-style.css
-script.js
-manifest.json
-netlify.toml
-netlify/functions/translate.js
-
-重要:
-translate.js は必ず netlify/functions/ の中に置いてください。
-Netlifyの環境変数 DEEPL_API_KEY も必要です。
+165フレーズ + DeepL会話翻訳 + 音声再生アプリです。
+GitHubへアップロード後、NetlifyでDEEPL_API_KEYを設定して再デプロイしてください。
+translate.js は netlify/functions/translate.js に入っています。
