@@ -182,6 +182,12 @@ body.hideRuby .extraRuby{display:none!important}
 /* conversation simple mode */
 .convActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .convModal textarea{min-height:110px}
+
+/* translate-and-play / history replay patch */
+button:disabled{opacity:.65;filter:grayscale(.15)}
+.histReplayBtn{border:0;border-radius:10px;background:#1266f1;color:white;padding:8px 10px;font-weight:900;margin-top:6px}
+.histText{cursor:pointer}
+
 </style>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#1266f1">
@@ -199,7 +205,7 @@ body.hideRuby .extraRuby{display:none!important}
     <button class="formbtn" onclick="clearMultiCategories()">解除</button>
   </div>
 </div>
-<select id="rate"><option value="0.75">ゆっくり</option><option value="0.9" selected>標準</option><option value="1.05">少し速い</option></select></div><div class="modes"><button data-mode="すべて" class="active">すべて</button><button data-mode="教習">教習</button><button data-mode="指導">指導</button><button data-mode="冬道">冬道</button><button data-mode="MT車">MT車</button><button data-mode="検定">検定</button><button data-mode="質問">質問</button><button data-mode="お気に入り">⭐お気に入り</button><button data-mode="緊急" class="danger">🚨緊急</button></div><div class="filters"><button data-filter="冬道">冬道 ON</button><button data-filter="MT車">MT車 ON</button><button data-filter="検定">検定 ON</button><button data-filter="緊急">緊急 ON</button><button data-filter="質問">質問 ON</button></div><div class="tools"><button id="rubyToggleBtn" class="toolbtn rubyToggleBtn" onclick="toggleRubyDisplay()">発音 ON</button><button class="toolbtn" onclick="openConversationModal()">💬会話</button><button class="toolbtn" onclick="toggleAdd()">＋自動翻訳登録</button><button class="toolbtn adminOnly" onclick="toggleBackup()">💾バックアップ</button><button class="toolbtn adminOnly" onclick="toggleHiddenPanel()">👁非表示管理</button><button class="adminExit adminOnly" onclick="disableAdminMode()">編集終了</button><button class="toolbtn" onclick="toggleHistory()">📜 履歴</button></div><div id="status" class="status">音声準備中...</div><div id="count" class="count"></div>
+<select id="rate"><option value="0.75">ゆっくり</option><option value="0.9" selected>標準</option><option value="1.05">少し速い</option></select></div><div class="modes"><button data-mode="すべて" class="active">すべて</button><button data-mode="教習">教習</button><button data-mode="指導">指導</button><button data-mode="冬道">冬道</button><button data-mode="MT車">MT車</button><button data-mode="検定">検定</button><button data-mode="質問">質問</button><button data-mode="お気に入り">⭐お気に入り</button><button data-mode="緊急" class="danger">🚨緊急</button></div><div class="filters"><button data-filter="冬道">冬道 ON</button><button data-filter="MT車">MT車 ON</button><button data-filter="検定">検定 ON</button><button data-filter="緊急">緊急 ON</button><button data-filter="質問">質問 ON</button></div><div class="tools"><button id="rubyToggleBtn" class="toolbtn rubyToggleBtn" onclick="toggleRubyDisplay()">発音 ON</button><button class="toolbtn" onclick="openConversationModal()">💬会話翻訳</button><button class="toolbtn" onclick="toggleAdd()">＋自動翻訳登録</button><button class="toolbtn adminOnly" onclick="toggleBackup()">💾バックアップ</button><button class="toolbtn adminOnly" onclick="toggleHiddenPanel()">👁非表示管理</button><button class="adminExit adminOnly" onclick="disableAdminMode()">編集終了</button><button class="toolbtn" onclick="toggleHistory()">📜 履歴</button></div><div id="status" class="status">音声準備中...</div><div id="count" class="count"></div>
 <div id="addPanel" class="panel">
 <b>新規フレーズ登録・自動翻訳</b>
 <p class="small">日本語だけ入力して「4言語へ自動翻訳」を押してください。翻訳結果を確認・修正してから登録できます。</p>
@@ -1630,17 +1636,164 @@ if ('serviceWorker' in navigator) {
     </select>
     <textarea id="convJp" placeholder="教習生に伝えたい日本語を入力してください（キーボードのマイク入力も使えます）"></textarea>
     <div class="convActions">
-      <button class="formbtn primary" onclick="translateConversation()">翻訳する</button>
+      <button class="formbtn primary" onclick="translateConversation()">翻訳して再生</button>
       
       <button class="formbtn" onclick="clearConversation()">クリア</button>
     </div>
     <div id="convResult" class="convResult">翻訳結果がここに表示されます。</div>
     <div class="convActions">
-      <button class="formbtn primary" onclick="speakConversationResult()">音声再生</button>
+      <button class="formbtn primary" onclick="speakConversationResult()">もう一度再生</button>
       <button class="formbtn" onclick="closeConversationModal()">閉じる</button>
     </div>
     <div class="convSmall">※自動翻訳はインターネット接続が必要です。翻訳結果はフレーズ登録されません。</div>
   </div>
 </div>
+
+
+<script>
+/* translate-and-play + history voice replay patch */
+function convLangLabel(l){
+  try{return LANGS[l] ? LANGS[l].label : '翻訳';}catch(_){return '翻訳';}
+}
+
+function pickVoiceForLangCode(code){
+  try{
+    const list = speechSynthesis.getVoices ? speechSynthesis.getVoices() : [];
+    const exact = list.find(v => (v.lang||'').toLowerCase() === String(code||'').toLowerCase());
+    if(exact)return exact;
+    const prefix = String(code||'').split('-')[0].toLowerCase();
+    return list.find(v => (v.lang||'').toLowerCase().startsWith(prefix)) || null;
+  }catch(_){
+    return null;
+  }
+}
+
+function speakWithLang(text, jp, langKey){
+  if(!text)return;
+  if(!('speechSynthesis' in window))return;
+  speechSynthesis.cancel();
+  const cfg = (typeof LANGS !== 'undefined' && LANGS[langKey]) ? LANGS[langKey] : LANGS.vi;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = cfg.code;
+  const v = pickVoiceForLangCode(cfg.code);
+  if(v)u.voice = v;
+  try{u.rate = parseFloat(rate.value) || 0.9;}catch(_){u.rate = 0.9;}
+  speechSynthesis.speak(u);
+
+  const item = {
+    jp: jp || '',
+    t: text,
+    label: cfg.label,
+    lang: langKey || 'vi',
+    time: new Date().toLocaleTimeString()
+  };
+  try{
+    history.unshift(item);
+    history = history.slice(0,30);
+    localStorage.setItem('hist_ultimate_auto', JSON.stringify(history));
+  }catch(_){}
+}
+
+async function translateConversation(){
+  const jp = convJp.value.trim();
+  if(!jp)return alert('日本語を入力してください');
+  const l = convLang.value || 'vi';
+  convTranslatedLang = l;
+  convTranslatedText = '';
+  convResult.textContent = 'DeepLで翻訳中...';
+
+  const btns = Array.from(document.querySelectorAll('button'));
+  const btn = btns.find(b => b.getAttribute('onclick') === 'translateConversation()');
+  if(btn){
+    btn.disabled = true;
+    btn.textContent = '翻訳中...';
+  }
+
+  try{
+    if(typeof translateOne !== 'function')throw new Error('translateOne not found');
+    const translated = await translateOne(jp, convTargetCode(l));
+    convTranslatedText = translated || jp;
+    convResult.innerHTML = '<div class="badge">'+esc(convLangLabel(l))+'</div><div>'+esc(convTranslatedText)+'</div>' +
+      (l === 'vi' && typeof kataFromRoman === 'function' ? '<div class="ruby">'+esc(kataFromRoman(convTranslatedText,'vi'))+'</div>' : '');
+    if(typeof status !== 'undefined')status.textContent = 'DeepLで会話翻訳し、音声再生しました。';
+    speakWithLang(convTranslatedText, jp, l);
+  }catch(e){
+    convTranslatedText = '';
+    convResult.textContent = '翻訳に失敗しました。Netlify Functions と DeepL APIキーを確認してください。';
+    alert('翻訳に失敗しました。Netlify Functions と DeepL APIキーを確認してください。');
+  }finally{
+    if(btn){
+      btn.disabled = false;
+      btn.textContent = '翻訳して再生';
+    }
+  }
+}
+
+function speakConversationResult(){
+  if(!convTranslatedText)return alert('先に翻訳してください');
+  const jp = convJp.value.trim() || '';
+  const l = convTranslatedLang || convLang.value || 'vi';
+  speakWithLang(convTranslatedText, jp, l);
+}
+
+function historyLangFromLabel(label){
+  if(label === 'ベトナム語')return 'vi';
+  if(label === '英語')return 'en';
+  if(label === '中国語')return 'zh';
+  if(label === 'ポルトガル語')return 'pt';
+  return (typeof lang !== 'undefined' && lang.value) ? lang.value : 'vi';
+}
+
+function speakHistory(indexFromNewest){
+  const items = (history || []).slice().reverse();
+  const item = items[indexFromNewest];
+  if(!item)return;
+
+  // 登録フレーズ以外の会話翻訳履歴も、その履歴の翻訳文をそのまま再生
+  const langKey = item.lang || historyLangFromLabel(item.label);
+  const text = item.t || item.text || '';
+  const jp = item.jp || '';
+  if(text){
+    speakWithLang(text, jp, langKey);
+    return;
+  }
+
+  const p = (typeof findPhraseFromHistoryItem === 'function') ? findPhraseFromHistoryItem(item) : null;
+  if(p){
+    const l = (typeof lang !== 'undefined' && lang.value) ? lang.value : 'vi';
+    speak(p[l] || p.vi || p.jp, p.jp);
+    return;
+  }
+
+  alert('再生できる履歴がありません');
+}
+
+function historyText(x){
+  const jp = x.jp ? x.jp + ' → ' : '';
+  return (x.time || '') + ' / ' + (x.label || '') + '　' + jp + (x.t || x.text || '');
+}
+
+function toggleHistory(){
+  const items = (history || []).slice().reverse();
+  if(!items.length){
+    if(typeof openCommonPanel === 'function')openCommonPanel('履歴','<p class="small">履歴はありません。</p>');
+    else {
+      historyPanel.classList.toggle('show');
+      historyPanel.innerHTML = '<b>再生履歴</b><p>履歴はまだありません。</p>';
+    }
+    return;
+  }
+
+  const body = '<div class="historyHint">履歴の「再生」を押すと、登録フレーズ以外の会話翻訳も音声再生できます。</div>' +
+    '<button class="formbtn warn" onclick="clearAllHistoryFromPanel()">履歴をすべて削除</button>' +
+    items.map((x,i)=>`<div class="histRow"><div class="histText" onclick="speakHistory(${i})">🔊 ${esc(historyText(x))}</div><button class="histReplayBtn" onclick="speakHistory(${i})">再生</button><button class="histDeleteBtn" onclick="deleteHistoryItem(${i},event)">削除</button></div>`).join('');
+
+  if(typeof openCommonPanel === 'function')openCommonPanel('履歴', body);
+  else {
+    historyPanel.classList.toggle('show');
+    historyPanel.innerHTML = '<b>再生履歴</b>' + body;
+  }
+}
+</script>
 
 </body></html>
