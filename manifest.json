@@ -1,8 +1,0 @@
-{
-  "name": "教習所多言語音声アプリ",
-  "short_name": "教習翻訳",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#f4f7fb",
-  "theme_color": "#1266f1"
-}
