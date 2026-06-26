@@ -8,18 +8,20 @@ exports.handler = async function(event) {
       };
     }
 
-    const input = JSON.parse(event.body || "{}");
-    const text = input.text || "";
-    const targetLang = input.target_lang || "VI";
-    const sourceLang = input.source_lang || "JA";
+    const authKey = process.env.DEEPL_API_KEY;
 
-    if (!process.env.DEEPL_API_KEY) {
+    if (!authKey) {
       return {
         statusCode: 500,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ error: "DEEPL_API_KEY is not set" })
       };
     }
+
+    const input = JSON.parse(event.body || "{}");
+    const text = input.text || "";
+    const targetLang = input.target_lang || "VI";
+    const sourceLang = input.source_lang || "JA";
 
     if (!text) {
       return {
@@ -30,23 +32,28 @@ exports.handler = async function(event) {
     }
 
     const params = new URLSearchParams();
-    params.append("auth_key", process.env.DEEPL_API_KEY);
     params.append("text", text);
     params.append("target_lang", targetLang);
     params.append("source_lang", sourceLang);
 
     const response = await fetch("https://api-free.deepl.com/v2/translate", {
       method: "POST",
-      body: params
+      headers: {
+        "Authorization": "DeepL-Auth-Key " + authKey,
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: params.toString()
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
       return {
         statusCode: response.status,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: data.message || "DeepL API error" })
+        body: JSON.stringify({
+          error: data.message || data.error || "DeepL API error"
+        })
       };
     }
 
