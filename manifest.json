@@ -1,6 +1,6 @@
 {
-  "name": "教習所多言語音声アプリ DeepL版",
-  "short_name": "DeepL教習",
+  "name": "教習翻訳",
+  "short_name": "教習翻訳",
   "description": "教習所向け多言語音声再生アプリ DeepL版",
   "start_url": "./index.html",
   "scope": "./",
