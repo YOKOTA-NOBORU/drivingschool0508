@@ -1,6 +1,6 @@
 {
   "name": "習所向け 多言語音声アプリ",
-  "short_name": "教習音声",
+  "short_name": "教習トーク",
   "description": "教習所向け多言語音声再生アプリ",
   "start_url": "./index.html",
   "scope": "./",
