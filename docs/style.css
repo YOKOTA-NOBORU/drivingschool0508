@@ -1,0 +1,229 @@
+:root {
+  color-scheme: light;
+  --bg: #f4f7fb;
+  --surface: #ffffff;
+  --surface-muted: #f8fbff;
+  --border: #dfe8f4;
+  --text: #14213d;
+  --muted: #66758a;
+  --primary: #1f6feb;
+  --primary-dark: #0d4eb1;
+  --accent: #e8f1ff;
+  --danger: #ff5f5f;
+  --shadow: 0 10px 30px rgba(20, 33, 61, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Yu Gothic UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+button,
+select {
+  font: inherit;
+}
+
+.app-shell {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 16px 14px 32px;
+}
+
+.hero {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.eyebrow {
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.88;
+  margin: 0 0 6px;
+}
+
+.hero h1 {
+  margin: 0 0 8px;
+  font-size: 1.3rem;
+}
+
+.hero-copy {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  opacity: 0.95;
+}
+
+.controls-card,
+.intro-card,
+.info-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 14px;
+  margin-top: 14px;
+}
+
+.controls-card {
+  display: grid;
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.field span {
+  font-size: 0.92rem;
+}
+
+select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-muted);
+}
+
+.intro-label {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.intro-card h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.intro-description {
+  margin: 0;
+  line-height: 1.7;
+  font-size: 0.97rem;
+}
+
+.toggle-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.toggle-chip {
+  border: 1px solid var(--border);
+  background: #eef5ff;
+  color: var(--primary-dark);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 700;
+}
+
+.toggle-chip.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.sections {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.info-card.is-hidden {
+  display: none;
+}
+
+.info-card h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.section-copy {
+  margin: 0;
+  line-height: 1.7;
+  font-size: 0.97rem;
+}
+
+.card-actions {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.small-btn,
+.play-btn,
+.tap-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 9px 12px;
+  font-weight: 700;
+}
+
+.tap-btn {
+  background: var(--accent);
+  color: var(--primary-dark);
+}
+
+.play-btn {
+  background: #1d964d;
+  color: white;
+}
+
+.small-btn {
+  background: #eef2f8;
+  color: var(--muted);
+}
+
+.language-box {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--surface-muted);
+  border: 1px dashed var(--border);
+}
+
+.language-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.language-text {
+  margin: 0;
+  line-height: 1.7;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.status-bar {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  min-height: 44px;
+}
+
+@media (min-width: 700px) {
+  .controls-card {
+    grid-template-columns: 1fr 1fr;
+    align-items: end;
+  }
+}
