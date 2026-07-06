@@ -20,13 +20,13 @@ const state = {
 };
 
 function init() {
-  populateTopicSelect();
+  populateitemSelect();
   bindEvents();
   render();
 }
 
-function populateTopicSelect() {
-  const select = document.getElementById('topicSelect');
+function populateitemSelect() {
+  const select = document.getElementById('itemSelect');
   select.innerHTML = textbookData
     .map((item) => `<option value="${item.id}">${item.title}</option>`)
     .join('');
@@ -34,7 +34,7 @@ function populateTopicSelect() {
 }
 
 function bindEvents() {
-  document.getElementById('topicSelect').addEventListener('change', (event) => {
+  document.getElementById('itemSelect').addEventListener('change', (event) => {
     state.currentItemId = Number(event.target.value);
     render();
   });
@@ -80,7 +80,7 @@ function bindEvents() {
 
 function render() {
   const item = getCurrentItem();
-  const topicSelect = document.getElementById('topicSelect');
+  const itemSelect = document.getElementById('itemSelect');
   const languageSelect = document.getElementById('languageSelect');
   const title = document.getElementById('itemTitle');
   const description = document.getElementById('itemDescription');
@@ -88,7 +88,7 @@ function render() {
   const sections = document.getElementById('sections');
   const status = document.getElementById('status');
 
-  topicSelect.value = String(item.id);
+  itemSelect.value = String(item.id);
   languageSelect.value = state.currentLanguage;
   title.textContent = item.title;
   description.textContent = item.description;
