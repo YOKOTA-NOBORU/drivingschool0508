@@ -1,25 +1,275 @@
 const LANGS={vi:"ベトナム語",en:"英語",zh:"中国語",pt:"ポルトガル語"};
 const KINDS=["教官ワンポイント","検定ポイント","よくある失敗","覚えておきたいこと","教習で使う一言"];
-let currentStage=1,currentId=1,visibleKinds=new Set(["説明"]),currentSpeechBlock=null;
-const itemSelect=document.getElementById("itemSelect"),langSelect=document.getElementById("lang"),headerCard=document.getElementById("headerCard"),list=document.getElementById("list");
-function voiceLang(c){return c==="vi"?"vi-VN":c==="en"?"en-US":c==="zh"?"zh-CN":"pt-BR"}
-function stopSpeech(){if("speechSynthesis" in window)speechSynthesis.cancel();if(currentSpeechBlock){currentSpeechBlock.classList.remove("playing");const h=currentSpeechBlock.querySelector(".tap-speech-hint");if(h)h.textContent="🔊 タップで再生";}currentSpeechBlock=null;}
-function toggleSpeech(text,lang,block){if(!("speechSynthesis" in window)){alert("この端末では音声再生に対応していません。");return}if(currentSpeechBlock===block&&speechSynthesis.speaking){stopSpeech();return}stopSpeech();const u=new SpeechSynthesisUtterance(text);u.lang=voiceLang(lang);u.rate=.9;currentSpeechBlock=block;block.classList.add("playing");const h=block.querySelector(".tap-speech-hint");if(h)h.textContent="■ タップで停止";u.onend=()=>{if(currentSpeechBlock===block)stopSpeech()};u.onerror=()=>{if(currentSpeechBlock===block)stopSpeech()};speechSynthesis.speak(u)}
-function addSpeechStyles(){if(document.getElementById("tap-speech-style"))return;const s=document.createElement("style");s.id="tap-speech-style";s.textContent=`.foreign-block{cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .08s ease;-webkit-tap-highlight-color:transparent}.foreign-block:active{transform:scale(.99)}.foreign-block.playing{background:#e4f5e9;border-left-color:#2f965c;box-shadow:0 0 0 2px rgba(47,150,92,.14)}.tap-speech-hint{margin-top:7px;color:#14532d;font-size:12px;font-weight:800}`;document.head.appendChild(s)}
-function displayNo(item){const arr=allItems().filter(x=>x.stage===item.stage);return arr.findIndex(x=>x.uid===item.uid)+1}
-function convertSectionItem(it){return {uid:`t-${it.id}`,id:it.id,stage:it.stage||1,title:it.title,blocks:(it.sections||[]).map(sec=>({title:sec.label,ja:[{label:"説明",text:sec.japanese||""},{label:"教官ワンポイント",text:sec.japanese||""},{label:"検定ポイント",text:"安全確認・速度調整・正しい操作を落ち着いて行いましょう。"},{label:"よくある失敗",text:"確認不足や急な操作に注意しましょう。"},{label:"覚えておきたいこと",text:"早めに確認し、無理をせず、安全第一で行動しましょう。"},{label:"教習で使う一言",text:sec.japanese||""}],vi:[{label:"Giải thích",text:sec.translations?.vi||""},{label:"Lời khuyên của giáo viên",text:sec.translations?.vi||""},{label:"Điểm kiểm tra",text:"Hãy kiểm tra an toàn, điều chỉnh tốc độ và thao tác bình tĩnh."},{label:"Lỗi thường gặp",text:"Lỗi thường gặp là thiếu quan sát hoặc thao tác quá vội."},{label:"Điểm cần nhớ",text:"Hãy quan sát sớm, không vội và ưu tiên an toàn."},{label:"Câu nói dùng khi dạy lái",text:sec.translations?.vi||""}],en:[{label:"Explanation",text:sec.translations?.en||""},{label:"Instructor tip",text:sec.translations?.en||""},{label:"Test point",text:"Check safety, adjust speed, and operate calmly."},{label:"Common mistake",text:"Common mistakes are insufficient checking or sudden operation."},{label:"Key point to remember",text:"Check early, do not rush, and put safety first."},{label:"Useful instruction phrase",text:sec.translations?.en||""}],zh:[{label:"说明",text:sec.translations?.zh||""},{label:"教练提示",text:sec.translations?.zh||""},{label:"考试重点",text:"请确认安全，调整速度，并冷静操作。"},{label:"常见错误",text:"常见错误是确认不足或操作过急。"},{label:"需要记住的事",text:"提前确认，不要勉强，安全第一。"},{label:"教习中常用一句话",text:sec.translations?.zh||""}],pt:[{label:"Explicação",text:sec.translations?.pt||""},{label:"Dica do instrutor",text:sec.translations?.pt||""},{label:"Ponto do exame",text:"Confirme a segurança, ajuste a velocidade e opere com calma."},{label:"Erro comum",text:"Erros comuns são pouca verificação ou operação brusca."},{label:"Ponto para lembrar",text:"Observe cedo, não force e priorize a segurança."},{label:"Frase útil na instrução",text:sec.translations?.pt||""}]}))}}
-function allItems(){const mobile=(typeof MOBILE_ITEMS!=="undefined"?MOBILE_ITEMS:[]).map(x=>({...x,uid:`m-${x.id}`,stage:1}));const mobileIds=new Set(mobile.map(x=>x.id));const rest=(typeof textbookData!=="undefined"?textbookData:[]).filter(x=>!mobileIds.has(x.id)).map(convertSectionItem);return [...mobile,...rest].sort((a,b)=>(a.stage-b.stage)||(a.id-b.id))}
-function stageItems(){return allItems().filter(x=>x.stage===currentStage)}
-function cur(){return allItems().find(x=>x.uid===currentId)||stageItems()[0]||allItems()[0]}
-function fill(){const items=stageItems();itemSelect.innerHTML="";items.forEach(it=>{const o=document.createElement("option");o.value=it.uid;o.textContent=`教習項目${String(displayNo(it)).padStart(2,"0")}　${it.title}`;itemSelect.appendChild(o)});if(!items.find(x=>x.uid===currentId)&&items[0])currentId=items[0].uid;itemSelect.value=currentId}
-function renderHeader(){const it=cur();if(!it)return;headerCard.innerHTML=`<span class="badge">第${it.stage}段階 ${displayNo(it)}項目</span><div class="title">${it.title}</div><div class="count">${it.blocks.length} 説明</div><div class="toggle-grid">${KINDS.map(k=>`<button class="${visibleKinds.has(k)?"active":""}" data-kind="${k}">${k}</button>`).join("")}</div>`;headerCard.querySelectorAll("[data-kind]").forEach(b=>b.onclick=()=>{stopSpeech();const k=b.dataset.kind;if(visibleKinds.has(k))visibleKinds.delete(k);else visibleKinds.add(k);renderHeader();renderList()})}
-function renderList(){stopSpeech();const lang=langSelect.value,it=cur();list.innerHTML="";if(!it)return;it.blocks.forEach((b,i)=>{const box=document.createElement("article");box.className="section";const ja=b.ja.filter(x=>visibleKinds.has(x.label)).map(x=>`<div class="jp-block"><div class="jp-label">${x.label}</div><p class="jp-text">${x.text}</p></div>`).join("");const fr=b[lang].filter((x,idx)=>visibleKinds.has(b.ja[idx]?.label)).map(x=>`<div class="foreign-block" role="button" tabindex="0" data-speech-text="${encodeURIComponent(x.text)}"><div class="foreign-label">${x.label}</div><p class="foreign-text">${x.text}</p><div class="tap-speech-hint">🔊 タップで再生</div></div>`).join("");box.innerHTML=`<button class="accordion" type="button"><span>${i+1}. ${b.title}</span><span class="mark">▶</span></button>${ja}<div class="foreign">${fr}</div>`;const acc=box.querySelector(".accordion"),f=box.querySelector(".foreign"),m=box.querySelector(".mark");acc.onclick=()=>{stopSpeech();f.classList.toggle("show");m.textContent=f.classList.contains("show")?"▼":"▶"};box.querySelectorAll(".foreign-block").forEach(block=>{const play=()=>toggleSpeech(decodeURIComponent(block.dataset.speechText||""),lang,block);block.addEventListener("click",play);block.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();play()}})});list.appendChild(box)})}
-function render(){fill();renderHeader();renderList();document.querySelectorAll(".stage").forEach(b=>b.classList.toggle("active",Number(b.dataset.stage)===currentStage))}
+
+let currentStage=1;
+let currentKey="";
+let visibleKinds=new Set(["説明"]);
+let currentSpeechBlock=null;
+
+const itemSelect=document.getElementById("itemSelect");
+const langSelect=document.getElementById("lang");
+const headerCard=document.getElementById("headerCard");
+const list=document.getElementById("list");
+const prevBtn=document.getElementById("prevBtn");
+const nextBtn=document.getElementById("nextBtn");
+
+function voiceLang(code){
+  return code==="vi"?"vi-VN":code==="en"?"en-US":code==="zh"?"zh-CN":"pt-BR";
+}
+
+function stopSpeech(){
+  if("speechSynthesis" in window) speechSynthesis.cancel();
+  if(currentSpeechBlock){
+    currentSpeechBlock.classList.remove("playing");
+    const hint=currentSpeechBlock.querySelector(".tap-speech-hint");
+    if(hint) hint.textContent="🔊 タップで再生";
+  }
+  currentSpeechBlock=null;
+}
+
+function toggleSpeech(text,lang,block){
+  if(!("speechSynthesis" in window)){
+    alert("この端末では音声再生に対応していません。");
+    return;
+  }
+  if(currentSpeechBlock===block && speechSynthesis.speaking){
+    stopSpeech();
+    return;
+  }
+
+  stopSpeech();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang=voiceLang(lang);
+  u.rate=.9;
+
+  currentSpeechBlock=block;
+  block.classList.add("playing");
+  const hint=block.querySelector(".tap-speech-hint");
+  if(hint) hint.textContent="■ タップで停止";
+
+  u.onend=()=>{if(currentSpeechBlock===block) stopSpeech();};
+  u.onerror=()=>{if(currentSpeechBlock===block) stopSpeech();};
+  speechSynthesis.speak(u);
+}
+
+function addSpeechStyles(){
+  if(document.getElementById("tap-speech-style")) return;
+  const s=document.createElement("style");
+  s.id="tap-speech-style";
+  s.textContent=`
+    .foreign-block{cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .08s ease;-webkit-tap-highlight-color:transparent}
+    .foreign-block:active{transform:scale(.99)}
+    .foreign-block.playing{background:#e4f5e9;border-left-color:#2f965c;box-shadow:0 0 0 2px rgba(47,150,92,.14)}
+    .tap-speech-hint{margin-top:7px;color:#14532d;font-size:12px;font-weight:800}
+  `;
+  document.head.appendChild(s);
+}
+
+function normalizedItems(){
+  const src=typeof MOBILE_ITEMS!=="undefined" ? MOBILE_ITEMS : [];
+  const seen=new Set();
+  return src
+    .map((item,index)=>{
+      const stage=Number(item.stage||1);
+      const id=Number(item.id||index+1);
+      return {...item,stage,id,key:`${stage}-${id}`};
+    })
+    .filter(item=>{
+      if(seen.has(item.key)) return false;
+      seen.add(item.key);
+      return true;
+    })
+    .sort((a,b)=>(a.stage-b.stage)||(a.id-b.id));
+}
+
+function stageItems(){
+  return normalizedItems().filter(item=>item.stage===currentStage);
+}
+
+function currentItem(){
+  const items=stageItems();
+  return items.find(item=>item.key===currentKey)||items[0]||null;
+}
+
+function displayNo(item){
+  return stageItems().findIndex(x=>x.key===item.key)+1;
+}
+
+function fillSelect(){
+  const items=stageItems();
+  if(!items.some(x=>x.key===currentKey)){
+    currentKey=items[0]?.key||"";
+  }
+
+  itemSelect.innerHTML="";
+  items.forEach((item,index)=>{
+    const option=document.createElement("option");
+    option.value=item.key;
+    option.textContent=`教習項目${String(index+1).padStart(2,"0")}　${item.title}`;
+    itemSelect.appendChild(option);
+  });
+  itemSelect.value=currentKey;
+}
+
+function renderHeader(){
+  const item=currentItem();
+  if(!item){
+    headerCard.innerHTML="";
+    return;
+  }
+
+  headerCard.innerHTML=`
+    <span class="badge">第${item.stage}段階 ${displayNo(item)}項目</span>
+    <div class="title">${item.title}</div>
+    <div class="count">${(item.blocks||[]).length} 説明</div>
+    <div class="toggle-grid">
+      ${KINDS.map(kind=>`<button class="${visibleKinds.has(kind)?"active":""}" data-kind="${kind}">${kind}</button>`).join("")}
+    </div>
+  `;
+
+  headerCard.querySelectorAll("[data-kind]").forEach(button=>{
+    button.onclick=()=>{
+      stopSpeech();
+      const kind=button.dataset.kind;
+      visibleKinds.has(kind)?visibleKinds.delete(kind):visibleKinds.add(kind);
+      renderHeader();
+      renderList();
+    };
+  });
+}
+
+function renderList(){
+  stopSpeech();
+  const lang=langSelect.value;
+  const item=currentItem();
+  list.innerHTML="";
+  if(!item) return;
+
+  (item.blocks||[]).forEach((block,index)=>{
+    const article=document.createElement("article");
+    article.className="section";
+
+    const ja=(block.ja||[])
+      .filter(x=>visibleKinds.has(x.label))
+      .map(x=>`<div class="jp-block"><div class="jp-label">${x.label}</div><p class="jp-text">${x.text}</p></div>`)
+      .join("");
+
+    const foreign=(block[lang]||[])
+      .filter((x,i)=>visibleKinds.has((block.ja||[])[i]?.label))
+      .map(x=>`
+        <div class="foreign-block" role="button" tabindex="0" data-speech-text="${encodeURIComponent(x.text||"")}">
+          <div class="foreign-label">${x.label}</div>
+          <p class="foreign-text">${x.text}</p>
+          <div class="tap-speech-hint">🔊 タップで再生</div>
+        </div>
+      `)
+      .join("");
+
+    article.innerHTML=`
+      <button class="accordion" type="button">
+        <span>${index+1}. ${block.title}</span><span class="mark">▶</span>
+      </button>
+      ${ja}
+      <div class="foreign">${foreign}</div>
+    `;
+
+    const accordion=article.querySelector(".accordion");
+    const foreignArea=article.querySelector(".foreign");
+    const mark=article.querySelector(".mark");
+
+    accordion.onclick=()=>{
+      stopSpeech();
+      foreignArea.classList.toggle("show");
+      mark.textContent=foreignArea.classList.contains("show")?"▼":"▶";
+    };
+
+    article.querySelectorAll(".foreign-block").forEach(blockEl=>{
+      const play=()=>toggleSpeech(
+        decodeURIComponent(blockEl.dataset.speechText||""),
+        lang,
+        blockEl
+      );
+      blockEl.addEventListener("click",play);
+      blockEl.addEventListener("keydown",event=>{
+        if(event.key==="Enter"||event.key===" "){
+          event.preventDefault();
+          play();
+        }
+      });
+    });
+
+    list.appendChild(article);
+  });
+}
+
+function updateNavButtons(){
+  const items=stageItems();
+  const index=items.findIndex(x=>x.key===currentKey);
+  prevBtn.disabled=index<=0;
+  nextBtn.disabled=index<0||index>=items.length-1;
+  prevBtn.style.opacity=prevBtn.disabled?".45":"1";
+  nextBtn.style.opacity=nextBtn.disabled?".45":"1";
+}
+
+function render(){
+  fillSelect();
+  renderHeader();
+  renderList();
+  updateNavButtons();
+  document.querySelectorAll(".stage").forEach(button=>{
+    button.classList.toggle("active",Number(button.dataset.stage)===currentStage);
+  });
+}
+
 addSpeechStyles();
-document.querySelectorAll(".stage").forEach(b=>b.onclick=()=>{stopSpeech();currentStage=Number(b.dataset.stage);currentId=(stageItems()[0]||{}).uid;visibleKinds=new Set(["説明"]);render();window.scrollTo({top:0,behavior:"smooth"})});
-itemSelect.onchange=()=>{stopSpeech();currentId=itemSelect.value;visibleKinds=new Set(["説明"]);render();window.scrollTo({top:0,behavior:"smooth"})};
-langSelect.onchange=()=>{stopSpeech();renderList()};
-document.getElementById("prevBtn").onclick=()=>{stopSpeech();const arr=stageItems();let i=arr.findIndex(x=>x.uid===currentId);if(i>0){currentId=arr[i-1].uid;render()}};
-document.getElementById("nextBtn").onclick=()=>{stopSpeech();const arr=stageItems();let i=arr.findIndex(x=>x.uid===currentId);if(i>=0&&i<arr.length-1){currentId=arr[i+1].uid;render()}};
+
+document.querySelectorAll(".stage").forEach(button=>{
+  button.onclick=()=>{
+    stopSpeech();
+    currentStage=Number(button.dataset.stage);
+    currentKey=stageItems()[0]?.key||"";
+    visibleKinds=new Set(["説明"]);
+    render();
+    window.scrollTo({top:0,behavior:"smooth"});
+  };
+});
+
+itemSelect.onchange=()=>{
+  stopSpeech();
+  currentKey=itemSelect.value;
+  visibleKinds=new Set(["説明"]);
+  render();
+  window.scrollTo({top:0,behavior:"smooth"});
+};
+
+langSelect.onchange=()=>{
+  stopSpeech();
+  renderList();
+};
+
+prevBtn.onclick=()=>{
+  stopSpeech();
+  const items=stageItems();
+  const index=items.findIndex(x=>x.key===currentKey);
+  if(index>0){
+    currentKey=items[index-1].key;
+    render();
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+};
+
+nextBtn.onclick=()=>{
+  stopSpeech();
+  const items=stageItems();
+  const index=items.findIndex(x=>x.key===currentKey);
+  if(index>=0 && index<items.length-1){
+    currentKey=items[index+1].key;
+    render();
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+};
+
 window.addEventListener("pagehide",stopSpeech);
+
+currentKey=stageItems()[0]?.key||"";
 render();
