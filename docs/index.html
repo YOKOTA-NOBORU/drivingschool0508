@@ -8,21 +8,44 @@
   <link rel="manifest" href="./manifest.json">
 </head>
 <body>
-<header><h1>運転教本アプリ</h1></header>
 <main class="wrap">
-  <div class="stage-tabs">
-    <button id="stage1" class="stage active" data-stage="1">第1段階</button>
-    <button id="stage2" class="stage" data-stage="2">第2段階</button>
-  </div>
-  <div class="toolbar">
-    <div><div class="field-label">教習項目を選択</div><select id="itemSelect"></select></div>
-    <div><div class="field-label">言語</div><select id="lang"><option value="vi">ベトナム語</option><option value="en">英語</option><option value="zh">中国語</option><option value="pt">ポルトガル語</option></select></div>
-  </div>
-  <div class="nav-row"><button id="prevBtn">◀ 前へ</button><button id="nextBtn">次へ ▶</button></div>
+  <section class="menu-card">
+    <div class="app-title">運転教本アプリ</div>
+
+    <div class="menu-body">
+      <div class="stage-tabs">
+        <button id="stage1" class="stage active" data-stage="1">第1段階</button>
+        <button id="stage2" class="stage" data-stage="2">第2段階</button>
+      </div>
+
+      <div class="toolbar">
+        <div>
+          <div class="field-label">教習項目を選択</div>
+          <select id="itemSelect"></select>
+        </div>
+        <div>
+          <div class="field-label">言語</div>
+          <select id="lang">
+            <option value="vi">ベトナム語</option>
+            <option value="en">英語</option>
+            <option value="zh">中国語</option>
+            <option value="pt">ポルトガル語</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="nav-row">
+        <button id="prevBtn">◀ 前へ</button>
+        <button id="nextBtn">次へ ▶</button>
+      </div>
+    </div>
+  </section>
+
   <section class="card" id="headerCard"></section>
   <section id="list"></section>
 </main>
 <script src="./mobile-data.js"></script>
 <script src="./data.js"></script>
 <script src="./app.js"></script>
-</body></html>
+</body>
+</html>

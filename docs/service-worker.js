@@ -1,4 +1,4 @@
-const CACHE_NAME = "textbook-v1";
+const CACHE_NAME = "textbook-design-v2";
 
 const urlsToCache = [
   "./",
