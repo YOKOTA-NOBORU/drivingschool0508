@@ -121,10 +121,10 @@ select{
 }
 
 .toggle-grid button{
-  min-height:44px;
+  min-height:42px;
   border:0;
   border-radius:14px;
-  padding:6px 8px;
+  padding:5px 8px;
   background:var(--green-soft);
   color:var(--green-dark);
   font-size:14px;
