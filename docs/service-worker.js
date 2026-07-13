@@ -1,10 +1,14 @@
-const CACHE_NAME = "textbook-design-v2";
+const CACHE_NAME = "textbook-pdf-step1-items1-2-v2";
 
 const urlsToCache = [
   "./",
   "./index.html",
   "./style.css",
+  "./pdf-viewer.css",
   "./app.js",
+  "./pdf-viewer.js",
+  "./pdf/1-1.pdf",
+  "./pdf/1-2.pdf",
   "./data.js",
   "./manifest.json"
 ];

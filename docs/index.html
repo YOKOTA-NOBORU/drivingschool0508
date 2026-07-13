@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>運転教本アプリ</title>
   <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./pdf-viewer.css">
   <link rel="manifest" href="./manifest.json">
 </head>
 <body>
@@ -44,8 +45,25 @@
   <section class="card" id="headerCard"></section>
   <section id="list"></section>
 </main>
+
+<div id="pdfModal" class="pdf-modal" aria-hidden="true">
+  <div class="pdf-dialog" role="dialog" aria-modal="true" aria-label="教本PDF">
+    <div class="pdf-dialog-header">
+      <strong>教本PDF</strong>
+      <button id="pdfCloseBtn" type="button" aria-label="PDFを閉じる">✕</button>
+    </div>
+    <iframe
+      id="pdfFrame"
+      title="教本PDF"
+      src="./pdf/1-1.pdf#view=FitH"
+      loading="lazy">
+    </iframe>
+  </div>
+</div>
+
 <script src="./mobile-data.js"></script>
 <script src="./data.js"></script>
 <script src="./app.js"></script>
+<script src="./pdf-viewer.js"></script>
 </body>
 </html>

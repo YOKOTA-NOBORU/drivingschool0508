@@ -124,8 +124,17 @@ function renderHeader(){
     <div class="count">${(item.blocks||[]).length} 説明</div>
     <div class="toggle-grid">
       ${KINDS.map(kind=>`<button class="${visibleKinds.has(kind)?"active":""}" data-kind="${kind}">${kind}</button>`).join("")}
+      ${["1-1","1-2"].includes(item.key) ? '<button class="pdf-open-button" data-pdf-open="1">📖 教本PDF</button>' : ''}
     </div>
   `;
+
+  const pdfButton=headerCard.querySelector("[data-pdf-open]");
+  if(pdfButton){
+    pdfButton.onclick=()=>{
+      stopSpeech();
+      if(typeof window.openTextbookPdf==="function") window.openTextbookPdf({key:item.key,title:`第${item.stage}段階${displayNo(item)}項目　${item.title}`});
+    };
+  }
 
   headerCard.querySelectorAll("[data-kind]").forEach(button=>{
     button.onclick=()=>{
