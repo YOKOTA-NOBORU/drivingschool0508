@@ -6,10 +6,8 @@
   const dialog=modal?.querySelector(".pdf-dialog");
   if(!modal||!closeBtn||!frame||!heading||!dialog) return;
 
-  const availablePdfs=new Set(["1-1","1-2"]);
-
   function openPdf({key="1-1",title="教本PDF"}={}){
-    if(!availablePdfs.has(key)) return;
+    if(!/^[12]-(?:[1-9]|1[0-9]|2[0-2])$/.test(key)) return;
     const pdfUrl=`./pdf/${key}.pdf#view=FitH`;
     heading.textContent=title;
     dialog.setAttribute("aria-label",`${title} 教本PDF`);

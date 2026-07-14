@@ -1,4 +1,4 @@
-const CACHE_NAME = "textbook-pdf-step1-items1-2-v2";
+const CACHE_NAME = "textbook-pdf-all-v2";
 
 const urlsToCache = [
   "./",
@@ -7,25 +7,17 @@ const urlsToCache = [
   "./pdf-viewer.css",
   "./app.js",
   "./pdf-viewer.js",
-  "./pdf/1-1.pdf",
-  "./pdf/1-2.pdf",
   "./data.js",
-  "./manifest.json"
+  "./mobile-data.js",
+  "./manifest.json",
+  "./icon-192.png",
+  "./icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache);
-    })
-  );
-});
-
-self.addEventListener("fetch", (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
   );
 });
 
@@ -33,12 +25,27 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
+        keys.map((key) => key === CACHE_NAME ? null : caches.delete(key))
       )
-    )
+    ).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
+
+  if (request.url.includes("/pdf/") && request.url.endsWith(".pdf")) {
+    event.respondWith(
+      fetch(request).then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        return response;
+      }).catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(request).then((cached) => cached || fetch(request))
   );
 });
