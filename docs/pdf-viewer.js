@@ -9,23 +9,17 @@
 function openPdf({key="1-1",title="教本PDF"}={}){
   if(!/^[12]-(?:[1-9]|1[0-9]|2[0-2])$/.test(key)) return;
 
-  const pdfUrl=`./pdf/${key}.pdf`;
+  const pdfUrl = `./pdf/${key}.pdf`;
 
-  // iPad・iPhoneはSafariで直接開く
+  // iPad・iPhone
   if (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
       (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) {
     window.location.href = pdfUrl;
-  return;
+    return;
   }
 
-  // Android・Windowsは今まで通り
-  heading.textContent=title;
-  dialog.setAttribute("aria-label",`${title} 教本PDF`);
-  frame.title=`${title} 教本PDF`;
-  frame.src=pdfUrl + "#view=FitH";
-  modal.classList.add("show");
-  modal.setAttribute("aria-hidden","false");
-  document.body.classList.add("pdf-modal-open");
+  // Windows・Android・Mac
+  window.open(pdfUrl, "_blank");
 }
 
   function closePdf(){
