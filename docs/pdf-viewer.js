@@ -14,8 +14,8 @@ function openPdf({key="1-1",title="教本PDF"}={}){
   // iPad・iPhoneはSafariで直接開く
   if (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
       (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) {
-    window.open(pdfUrl, "_blank");
-    return;
+    window.location.href = pdfUrl;
+  return;
   }
 
   // Android・Windowsは今まで通り
