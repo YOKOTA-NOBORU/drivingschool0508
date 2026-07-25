@@ -95,3 +95,8 @@ body.pdf-modal-open{
     height:calc(100% - 52px);
   }
 }
+
+#pdfOfflineBtn:disabled {
+  opacity: .6;
+  cursor: wait;
+}

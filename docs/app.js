@@ -283,3 +283,15 @@ window.addEventListener("pagehide",stopSpeech);
 
 currentKey=stageItems()[0]?.key||"";
 render();
+
+// PWA / オフライン利用
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", async () => {
+    try {
+      const registration = await navigator.serviceWorker.register("./service-worker.js", { updateViaCache: "none" });
+      registration.update().catch(() => {});
+    } catch (error) {
+      console.error("Service Worker registration failed:", error);
+    }
+  });
+}
