@@ -1,4 +1,4 @@
-const CACHE_NAME = "textbook-pdf-all-v2";
+const CACHE_NAME = "textbook-pdf-all-v3";
 
 const urlsToCache = [
   "./",

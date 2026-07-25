@@ -482,3 +482,64 @@ select{
     padding-bottom:8px;
   }
 }
+
+/* ========================================
+   iPad横持ち対応 PDF.js 全ページ表示
+   iframeを使わず各ページをcanvasへ描画
+   ======================================== */
+.pdf-render-area{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:10px;
+  background:#e5e7eb;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+}
+
+.pdf-status{
+  display:flex;
+  min-height:180px;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  color:var(--muted);
+  text-align:center;
+  font-size:15px;
+  font-weight:800;
+}
+
+.pdf-status.error{
+  color:#991b1b;
+  background:#fef2f2;
+  border-radius:12px;
+}
+
+.pdf-page-wrap{
+  width:100%;
+  margin:0 auto 12px;
+}
+
+.pdf-page-label{
+  margin:0 0 5px;
+  color:#4b5563;
+  text-align:center;
+  font-size:12px;
+  font-weight:800;
+}
+
+.pdf-page-canvas{
+  display:block;
+  max-width:100%;
+  height:auto;
+  margin:0 auto;
+  background:#fff;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
+}
+
+/* 旧iframe用指定を無効化 */
+body.pdf-split-open #pdfSideFrame{
+  display:none;
+}

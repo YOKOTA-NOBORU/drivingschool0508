@@ -56,12 +56,9 @@
           <button id="pdfSideCloseBtn" type="button" aria-label="PDFを閉じる">✕ 閉じる</button>
         </div>
       </div>
-      <iframe
-        id="pdfSideFrame"
-        title="教本PDF"
-        src="about:blank"
-        loading="lazy">
-      </iframe>
+      <div id="pdfRenderArea" class="pdf-render-area" aria-live="polite">
+        <div class="pdf-status">PDFを読み込んでいます…</div>
+      </div>
     </aside>
   </div>
 </main>
@@ -69,6 +66,6 @@
 <script src="./mobile-data.js"></script>
 <script src="./data.js"></script>
 <script src="./app.js"></script>
-<script src="./pdf-viewer.js"></script>
+<script type="module" src="./pdf-viewer.js"></script>
 </body>
 </html>
