@@ -1,7 +1,7 @@
-import * as pdfjsLib from "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.mjs";
+import * as pdfjsLib from "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/legacy/build/pdf.mjs";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.worker.mjs";
+  "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/legacy/build/pdf.worker.mjs";
 
 (()=>{
   const panel=document.getElementById("pdfSidePanel");
@@ -68,17 +68,33 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
     }
   }
 
+  async function fetchPdfBytes(pdfUrl){
+    const response=await fetch(pdfUrl,{cache:"no-store"});
+    if(!response.ok){
+      throw new Error(`PDF fetch failed: ${response.status}`);
+    }
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
   async function loadPdf(pdfUrl){
     const serial=++loadSerial;
     showStatus("PDFを読み込んでいます…");
 
     try{
-      const loadingTask=pdfjsLib.getDocument({url:pdfUrl});
+      const pdfBytes=await fetchPdfBytes(pdfUrl);
+      if(serial!==loadSerial) return;
+
+      const loadingTask=pdfjsLib.getDocument({
+        data:pdfBytes,
+        useWorkerFetch:false,
+        isEvalSupported:false
+      });
       const pdfDocument=await loadingTask.promise;
       if(serial!==loadSerial){
         await pdfDocument.destroy();
         return;
       }
+
       currentDocument=pdfDocument;
       await renderDocument(pdfDocument,serial);
     }catch(error){
