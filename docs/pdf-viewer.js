@@ -134,6 +134,9 @@ async function cacheAllTextbookPdfs(onProgress) {
   const MAX_ZOOM = 1.6;
   const ZOOM_STEP = 0.1;
   let zoomLevel = 1;
+  let pdfScrollFrame = 0;
+  let lastFollowPage = 0;
+  let lessonFollowPausedUntil = 0;
 
   function updateZoomControls() {
     zoomResetBtn.textContent = `${Math.round(zoomLevel * 100)}%`;
@@ -192,6 +195,37 @@ async function cacheAllTextbookPdfs(onProgress) {
     renderArea.appendChild(status);
   }
 
+  function currentVisiblePdfPage(){
+    const pages=[...renderArea.querySelectorAll(".pdf-page-wrap")];
+    if(!pages.length) return 1;
+    const viewportCenter=renderArea.getBoundingClientRect().top+(renderArea.clientHeight/2);
+    let bestPage=1;
+    let bestDistance=Infinity;
+    pages.forEach((page,index)=>{
+      const rect=page.getBoundingClientRect();
+      const center=rect.top+(rect.height/2);
+      const distance=Math.abs(center-viewportCenter);
+      if(distance<bestDistance){
+        bestDistance=distance;
+        bestPage=index+1;
+      }
+    });
+    return bestPage;
+  }
+
+  function syncLessonToVisiblePdfPage({ force = false } = {}){
+    if(!currentDocument||(!force&&Date.now()<lessonFollowPausedUntil)) return;
+    const pageNumber=currentVisiblePdfPage();
+    if(!force&&pageNumber===lastFollowPage) return;
+    lastFollowPage=pageNumber;
+    window.syncExplanationToPdfPage?.(pageNumber,currentDocument.numPages);
+  }
+
+  function schedulePdfFollow(){
+    cancelAnimationFrame(pdfScrollFrame);
+    pdfScrollFrame=requestAnimationFrame(()=>syncLessonToVisiblePdfPage());
+  }
+
   async function renderDocument(pdfDocument, serial, { preserveScroll = false } = {}) {
     const oldScrollable = Math.max(1, renderArea.scrollHeight - renderArea.clientHeight);
     const oldScrollRatio = preserveScroll ? renderArea.scrollTop / oldScrollable : 0;
@@ -234,6 +268,10 @@ async function cacheAllTextbookPdfs(onProgress) {
     if (preserveScroll && serial === loadSerial) {
       const newScrollable = Math.max(0, renderArea.scrollHeight - renderArea.clientHeight);
       renderArea.scrollTop = newScrollable * oldScrollRatio;
+    }
+    if (serial === loadSerial) {
+      lastFollowPage = 0;
+      requestAnimationFrame(() => syncLessonToVisiblePdfPage({ force: true }));
     }
   }
 
@@ -389,6 +427,8 @@ async function cacheAllTextbookPdfs(onProgress) {
     panel.setAttribute("aria-hidden", "true");
     renderArea.innerHTML = "";
     currentPdfUrl = "";
+    lastFollowPage = 0;
+    window.clearPdfExplanationFollow?.();
     if (currentDocument) {
       try { await currentDocument.destroy(); } catch (_error) {}
       currentDocument = null;
@@ -440,6 +480,14 @@ async function cacheAllTextbookPdfs(onProgress) {
   updateZoomControls();
   landscapeTablet.addEventListener?.("change", handleLayoutChange);
   window.addEventListener("resize", handleResize, { passive: true });
+
+  renderArea.addEventListener("scroll", schedulePdfFollow, { passive: true });
+
+  const lessonPane = document.querySelector(".lesson-pane");
+  const pauseLessonFollow = () => { lessonFollowPausedUntil = Date.now() + 4000; };
+  lessonPane?.addEventListener("pointerdown", pauseLessonFollow, { passive: true });
+  lessonPane?.addEventListener("wheel", pauseLessonFollow, { passive: true });
+  lessonPane?.addEventListener("touchstart", pauseLessonFollow, { passive: true });
 
   divider.addEventListener("pointerdown", (event) => {
     if (!landscapeTablet.matches || !document.body.classList.contains("pdf-split-open")) return;

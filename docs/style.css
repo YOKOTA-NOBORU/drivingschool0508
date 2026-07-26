@@ -649,3 +649,17 @@ body.pdf-split-open #pdfSideFrame{
     cursor:col-resize !important;
   }
 }
+
+
+/* PDFスクロール連動：現在対応している説明を強調 */
+.section{
+  transition:box-shadow .22s ease,background-color .22s ease,border-color .22s ease;
+}
+.section.pdf-follow-active{
+  background:#eef9f1;
+  border-color:#63ad7d;
+  box-shadow:0 0 0 3px rgba(47,150,92,.18),0 4px 14px rgba(0,0,0,.08);
+}
+.section.pdf-follow-active .accordion{
+  background:#dff3e5;
+}

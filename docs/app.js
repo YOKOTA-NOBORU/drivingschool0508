@@ -158,6 +158,7 @@ function renderList(){
   (item.blocks||[]).forEach((block,index)=>{
     const article=document.createElement("article");
     article.className="section";
+    article.dataset.explanationIndex=String(index);
 
     const ja=(block.ja||[])
       .filter(x=>visibleKinds.has(x.label))
@@ -291,6 +292,30 @@ nextBtn.onclick=()=>{
     syncOpenPdfToCurrentItem();
     window.scrollTo({top:0,behavior:"smooth"});
   }
+};
+
+
+// PDFの表示ページに対応する説明へ自動スクロールする。
+// ページ数と説明数が異なる場合は、全体の位置を比例配分して対応させる。
+window.syncExplanationToPdfPage=function(pageNumber,totalPages){
+  const sections=[...list.querySelectorAll(".section")];
+  if(!sections.length) return;
+
+  const safeTotal=Math.max(1,Number(totalPages)||1);
+  const safePage=Math.min(safeTotal,Math.max(1,Number(pageNumber)||1));
+  const ratio=safeTotal<=1?0:(safePage-1)/(safeTotal-1);
+  const targetIndex=Math.min(sections.length-1,Math.round(ratio*(sections.length-1)));
+  const target=sections[targetIndex];
+
+  sections.forEach((section,index)=>section.classList.toggle("pdf-follow-active",index===targetIndex));
+
+  const lessonPane=document.querySelector(".lesson-pane");
+  if(!lessonPane||!document.body.classList.contains("pdf-split-open")) return;
+  target.scrollIntoView({behavior:"smooth",block:"center",inline:"nearest"});
+};
+
+window.clearPdfExplanationFollow=function(){
+  list.querySelectorAll(".pdf-follow-active").forEach(section=>section.classList.remove("pdf-follow-active"));
 };
 
 window.addEventListener("pagehide",stopSpeech);
