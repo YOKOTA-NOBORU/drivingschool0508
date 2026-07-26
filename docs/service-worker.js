@@ -1,4 +1,4 @@
-const CORE_CACHE = "textbook-core-v11-pdf-follow";
+const CORE_CACHE = "textbook-core-v12-pdf-follow-ipad-fix";
 const PDF_CACHE = "textbook-pdf-files-v1";
 const PDFJS_CACHE = "textbook-pdfjs-runtime-v1";
 

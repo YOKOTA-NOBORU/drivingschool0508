@@ -311,7 +311,13 @@ window.syncExplanationToPdfPage=function(pageNumber,totalPages){
 
   const lessonPane=document.querySelector(".lesson-pane");
   if(!lessonPane||!document.body.classList.contains("pdf-split-open")) return;
-  target.scrollIntoView({behavior:"smooth",block:"center",inline:"nearest"});
+
+  // iPad SafariではscrollIntoViewが外側の画面を動かしてしまうことがあるため、
+  // 左側ペインのscrollTopを直接変更する。
+  const paneRect=lessonPane.getBoundingClientRect();
+  const targetRect=target.getBoundingClientRect();
+  const nextTop=lessonPane.scrollTop + (targetRect.top-paneRect.top) - (lessonPane.clientHeight-targetRect.height)/2;
+  lessonPane.scrollTo({top:Math.max(0,nextTop),behavior:"smooth"});
 };
 
 window.clearPdfExplanationFollow=function(){
