@@ -257,6 +257,18 @@ langSelect.onchange=()=>{
   renderList();
 };
 
+function syncOpenPdfToCurrentItem(){
+  if(!document.body.classList.contains("pdf-split-open")) return;
+  const item=currentItem();
+  if(!item || !PDF_KEYS.has(item.key)) return;
+  if(typeof window.openTextbookPdf==="function"){
+    window.openTextbookPdf({
+      key:item.key,
+      title:`第${item.stage}段階${displayNo(item)}項目　${item.title}`
+    });
+  }
+}
+
 prevBtn.onclick=()=>{
   stopSpeech();
   const items=stageItems();
@@ -264,6 +276,7 @@ prevBtn.onclick=()=>{
   if(index>0){
     currentKey=items[index-1].key;
     render();
+    syncOpenPdfToCurrentItem();
     window.scrollTo({top:0,behavior:"smooth"});
   }
 };
@@ -275,6 +288,7 @@ nextBtn.onclick=()=>{
   if(index>=0 && index<items.length-1){
     currentKey=items[index+1].key;
     render();
+    syncOpenPdfToCurrentItem();
     window.scrollTo({top:0,behavior:"smooth"});
   }
 };
