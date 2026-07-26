@@ -197,71 +197,21 @@ async function cacheAllTextbookPdfs(onProgress) {
     renderArea.appendChild(status);
   }
 
-  function currentVisiblePdfPage(){
-    const pages=[...renderArea.querySelectorAll(".pdf-page-wrap")];
-    if(!pages.length) return 1;
-
-    // iPad SafariではgetBoundingClientRectだけで追跡すると更新されないことがあるため、
-    // スクロール領域内の位置から表示ページを直接判定する。
-    const targetY = renderArea.scrollTop + Math.max(1, renderArea.clientHeight * 0.45);
-    let bestPage = 1;
-    let bestDistance = Infinity;
-
-    pages.forEach((page,index)=>{
-      const center = page.offsetTop + page.offsetHeight / 2;
-      const distance = Math.abs(center - targetY);
-      if(distance < bestDistance){
-        bestDistance = distance;
-        bestPage = index + 1;
-      }
-    });
-
-    return observedVisiblePage || bestPage;
+  function currentPdfScrollProgress(){
+    const scrollable = Math.max(0, renderArea.scrollHeight - renderArea.clientHeight);
+    if (!scrollable) return 0;
+    return Math.min(1, Math.max(0, renderArea.scrollTop / scrollable));
   }
 
-  function setupPageObserver(){
-    pageObserver?.disconnect();
-    pageObserver = null;
-    observedVisiblePage = 1;
-
-    if(!("IntersectionObserver" in window)) return;
-    const visibility = new Map();
-    pageObserver = new IntersectionObserver((entries)=>{
-      entries.forEach(entry=>{
-        const pageNumber = Number(entry.target.dataset.pageNumber || 1);
-        visibility.set(pageNumber, entry.isIntersecting ? entry.intersectionRatio : 0);
-      });
-      let bestPage = observedVisiblePage;
-      let bestRatio = -1;
-      visibility.forEach((ratio,pageNumber)=>{
-        if(ratio > bestRatio){
-          bestRatio = ratio;
-          bestPage = pageNumber;
-        }
-      });
-      if(bestRatio > 0){
-        observedVisiblePage = bestPage;
-        syncLessonToVisiblePdfPage();
-      }
-    },{
-      root: renderArea,
-      threshold: [0.05,0.15,0.3,0.5,0.7,0.9]
-    });
-
-    renderArea.querySelectorAll(".pdf-page-wrap").forEach(page=>pageObserver.observe(page));
-  }
-
-  function syncLessonToVisiblePdfPage({ force = false } = {}){
-    if(!currentDocument||(!force&&Date.now()<lessonFollowPausedUntil)) return;
-    const pageNumber=currentVisiblePdfPage();
-    if(!force&&pageNumber===lastFollowPage) return;
-    lastFollowPage=pageNumber;
-    window.syncExplanationToPdfPage?.(pageNumber,currentDocument.numPages);
+  function syncLessonToPdfScroll({ force = false } = {}){
+    if(!currentDocument || (!force && Date.now() < lessonFollowPausedUntil)) return;
+    const progress = currentPdfScrollProgress();
+    window.syncExplanationToPdfProgress?.(progress);
   }
 
   function schedulePdfFollow(){
     cancelAnimationFrame(pdfScrollFrame);
-    pdfScrollFrame=requestAnimationFrame(()=>syncLessonToVisiblePdfPage());
+    pdfScrollFrame=requestAnimationFrame(()=>syncLessonToPdfScroll());
   }
 
   async function renderDocument(pdfDocument, serial, { preserveScroll = false } = {}) {
@@ -309,9 +259,7 @@ async function cacheAllTextbookPdfs(onProgress) {
       renderArea.scrollTop = newScrollable * oldScrollRatio;
     }
     if (serial === loadSerial) {
-      lastFollowPage = 0;
-      setupPageObserver();
-      requestAnimationFrame(() => syncLessonToVisiblePdfPage({ force: true }));
+      requestAnimationFrame(() => syncLessonToPdfScroll({ force: true }));
     }
   }
 
@@ -466,10 +414,7 @@ async function cacheAllTextbookPdfs(onProgress) {
     document.body.classList.remove("pdf-split-open");
     panel.setAttribute("aria-hidden", "true");
     renderArea.innerHTML = "";
-    pageObserver?.disconnect();
-    pageObserver = null;
     currentPdfUrl = "";
-    lastFollowPage = 0;
     window.clearPdfExplanationFollow?.();
     if (currentDocument) {
       try { await currentDocument.destroy(); } catch (_error) {}

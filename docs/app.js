@@ -295,32 +295,48 @@ nextBtn.onclick=()=>{
 };
 
 
-// PDFの表示ページに対応する説明へ自動スクロールする。
-// ページ数と説明数が異なる場合は、全体の位置を比例配分して対応させる。
-window.syncExplanationToPdfPage=function(pageNumber,totalPages){
+// PDF全体のスクロール量に合わせて、左側の説明も連続的に追従させる。
+// ページが変わる瞬間に説明が大きく飛ばないよう、ページ番号ではなく0〜100%の位置を使う。
+let pdfFollowAnimationFrame=0;
+window.syncExplanationToPdfProgress=function(progress){
   const sections=[...list.querySelectorAll(".section")];
-  if(!sections.length) return;
-
-  const safeTotal=Math.max(1,Number(totalPages)||1);
-  const safePage=Math.min(safeTotal,Math.max(1,Number(pageNumber)||1));
-  const ratio=safeTotal<=1?0:(safePage-1)/(safeTotal-1);
-  const targetIndex=Math.min(sections.length-1,Math.round(ratio*(sections.length-1)));
-  const target=sections[targetIndex];
-
-  sections.forEach((section,index)=>section.classList.toggle("pdf-follow-active",index===targetIndex));
-
   const lessonPane=document.querySelector(".lesson-pane");
-  if(!lessonPane||!document.body.classList.contains("pdf-split-open")) return;
+  if(!sections.length||!lessonPane||!document.body.classList.contains("pdf-split-open")) return;
 
-  // iPad SafariではscrollIntoViewが外側の画面を動かしてしまうことがあるため、
-  // 左側ペインのscrollTopを直接変更する。
-  const paneRect=lessonPane.getBoundingClientRect();
-  const targetRect=target.getBoundingClientRect();
-  const nextTop=lessonPane.scrollTop + (targetRect.top-paneRect.top) - (lessonPane.clientHeight-targetRect.height)/2;
-  lessonPane.scrollTo({top:Math.max(0,nextTop),behavior:"smooth"});
+  const safeProgress=Math.min(1,Math.max(0,Number(progress)||0));
+  const maxLessonScroll=Math.max(0,lessonPane.scrollHeight-lessonPane.clientHeight);
+  const desiredTop=maxLessonScroll*safeProgress;
+
+  // 一度に大きく飛ばず、PDFの指の動きに合わせて少しずつ追従する。
+  cancelAnimationFrame(pdfFollowAnimationFrame);
+  pdfFollowAnimationFrame=requestAnimationFrame(()=>{
+    const difference=desiredTop-lessonPane.scrollTop;
+    const maxStep=Math.max(40,lessonPane.clientHeight*0.32);
+    const step=Math.max(-maxStep,Math.min(maxStep,difference));
+    lessonPane.scrollTop=Math.max(0,Math.min(maxLessonScroll,lessonPane.scrollTop+step));
+
+    // 現在の表示中央に最も近い説明を強調する。
+    const paneCenter=lessonPane.getBoundingClientRect().top+lessonPane.clientHeight/2;
+    let activeIndex=0;
+    let nearest=Infinity;
+    sections.forEach((section,index)=>{
+      const rect=section.getBoundingClientRect();
+      const distance=Math.abs((rect.top+rect.height/2)-paneCenter);
+      if(distance<nearest){ nearest=distance; activeIndex=index; }
+    });
+    sections.forEach((section,index)=>section.classList.toggle("pdf-follow-active",index===activeIndex));
+  });
+};
+
+// 旧版との互換用。ページ単位の呼び出しが残っていても連続位置へ変換する。
+window.syncExplanationToPdfPage=function(pageNumber,totalPages){
+  const total=Math.max(1,Number(totalPages)||1);
+  const page=Math.min(total,Math.max(1,Number(pageNumber)||1));
+  window.syncExplanationToPdfProgress(total<=1?0:(page-1)/(total-1));
 };
 
 window.clearPdfExplanationFollow=function(){
+  cancelAnimationFrame(pdfFollowAnimationFrame);
   list.querySelectorAll(".pdf-follow-active").forEach(section=>section.classList.remove("pdf-follow-active"));
 };
 
