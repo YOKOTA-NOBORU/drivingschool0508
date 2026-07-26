@@ -1,4 +1,4 @@
-const CORE_CACHE = "textbook-core-v9";
+const CORE_CACHE = "textbook-core-v10-zoom";
 const PDF_CACHE = "textbook-pdf-files-v1";
 const PDFJS_CACHE = "textbook-pdfjs-runtime-v1";
 

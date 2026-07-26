@@ -112,11 +112,14 @@ async function cacheAllTextbookPdfs(onProgress) {
   const panel = document.getElementById("pdfSidePanel");
   const closeBtn = document.getElementById("pdfSideCloseBtn");
   const fullscreenBtn = document.getElementById("pdfFullscreenBtn");
+  const zoomOutBtn = document.getElementById("pdfZoomOutBtn");
+  const zoomResetBtn = document.getElementById("pdfZoomResetBtn");
+  const zoomInBtn = document.getElementById("pdfZoomInBtn");
   const renderArea = document.getElementById("pdfRenderArea");
   const heading = document.getElementById("pdfSideTitle");
   const contentLayout = document.querySelector(".content-layout");
   const divider = document.getElementById("splitDivider");
-  if (!panel || !closeBtn || !fullscreenBtn || !renderArea || !heading || !contentLayout || !divider) return;
+  if (!panel || !closeBtn || !fullscreenBtn || !zoomOutBtn || !zoomResetBtn || !zoomInBtn || !renderArea || !heading || !contentLayout || !divider) return;
 
   const landscapeTablet = window.matchMedia("(min-width: 768px) and (orientation: landscape)");
   let currentPdfUrl = "";
@@ -127,8 +130,16 @@ async function cacheAllTextbookPdfs(onProgress) {
   let offlinePromptInProgress = false;
   const SPLIT_WIDTH_KEY = "textbook-split-width-v1";
   let activePointerId = null;
+  const MIN_ZOOM = 0.7;
+  const MAX_ZOOM = 1.6;
+  const ZOOM_STEP = 0.1;
+  let zoomLevel = 1;
 
-
+  function updateZoomControls() {
+    zoomResetBtn.textContent = `${Math.round(zoomLevel * 100)}%`;
+    zoomOutBtn.disabled = zoomLevel <= MIN_ZOOM + 0.001;
+    zoomInBtn.disabled = zoomLevel >= MAX_ZOOM - 0.001;
+  }
 
   function clampLessonPercent(percent) {
     const layoutWidth = contentLayout.getBoundingClientRect().width;
@@ -181,11 +192,13 @@ async function cacheAllTextbookPdfs(onProgress) {
     renderArea.appendChild(status);
   }
 
-  async function renderDocument(pdfDocument, serial) {
+  async function renderDocument(pdfDocument, serial, { preserveScroll = false } = {}) {
+    const oldScrollable = Math.max(1, renderArea.scrollHeight - renderArea.clientHeight);
+    const oldScrollRatio = preserveScroll ? renderArea.scrollTop / oldScrollable : 0;
     renderArea.innerHTML = "";
     renderArea.scrollTop = 0;
 
-    const availableWidth = Math.max(280, renderArea.clientWidth - 20);
+    const availableWidth = Math.max(280, renderArea.clientWidth - 20) * zoomLevel;
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
 
     for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber++) {
@@ -217,6 +230,11 @@ async function cacheAllTextbookPdfs(onProgress) {
       const context = canvas.getContext("2d", { alpha: false });
       await page.render({ canvasContext: context, viewport: renderViewport }).promise;
     }
+
+    if (preserveScroll && serial === loadSerial) {
+      const newScrollable = Math.max(0, renderArea.scrollHeight - renderArea.clientHeight);
+      renderArea.scrollTop = newScrollable * oldScrollRatio;
+    }
   }
 
   async function loadPdf(pdfUrl) {
@@ -243,6 +261,8 @@ async function cacheAllTextbookPdfs(onProgress) {
       }
 
       currentDocument = pdfDocument;
+      zoomLevel = 1;
+      updateZoomControls();
       await renderDocument(pdfDocument, serial);
     } catch (error) {
       console.error("PDF.js load error:", error);
@@ -386,10 +406,27 @@ async function cacheAllTextbookPdfs(onProgress) {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       const serial = ++loadSerial;
-      renderDocument(currentDocument, serial).catch(error => {
+      renderDocument(currentDocument, serial, { preserveScroll: true }).catch(error => {
         console.error("PDF.js resize render error:", error);
       });
     }, 250);
+  }
+
+  function setZoom(nextZoom) {
+    const rounded = Math.round(nextZoom * 10) / 10;
+    const safeZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, rounded));
+    if (Math.abs(safeZoom - zoomLevel) < 0.001) return;
+    zoomLevel = safeZoom;
+    updateZoomControls();
+
+    if (!currentDocument) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      const serial = ++loadSerial;
+      renderDocument(currentDocument, serial, { preserveScroll: true }).catch(error => {
+        console.error("PDF.js zoom render error:", error);
+      });
+    }, 80);
   }
 
   window.openTextbookPdf = openPdf;
@@ -397,6 +434,10 @@ async function cacheAllTextbookPdfs(onProgress) {
 
   closeBtn.addEventListener("click", closePdf);
   fullscreenBtn.addEventListener("click", openFullscreenPdf);
+  zoomOutBtn.addEventListener("click", () => setZoom(zoomLevel - ZOOM_STEP));
+  zoomResetBtn.addEventListener("click", () => setZoom(1));
+  zoomInBtn.addEventListener("click", () => setZoom(zoomLevel + ZOOM_STEP));
+  updateZoomControls();
   landscapeTablet.addEventListener?.("change", handleLayoutChange);
   window.addEventListener("resize", handleResize, { passive: true });
 

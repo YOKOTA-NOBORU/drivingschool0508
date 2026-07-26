@@ -389,7 +389,10 @@ select{
 }
 
 #pdfFullscreenBtn,
-#pdfSideCloseBtn{
+#pdfSideCloseBtn,
+#pdfZoomOutBtn,
+#pdfZoomResetBtn,
+#pdfZoomInBtn{
   border:0;
   border-radius:12px;
   padding:8px 11px;
@@ -401,7 +404,10 @@ select{
 }
 
 #pdfFullscreenBtn:active,
-#pdfSideCloseBtn:active{
+#pdfSideCloseBtn:active,
+#pdfZoomOutBtn:active,
+#pdfZoomResetBtn:active,
+#pdfZoomInBtn:active{
   transform:scale(.98);
 }
 
@@ -491,12 +497,12 @@ select{
   flex:1 1 auto;
   min-height:0;
   overflow-y:auto;
-  overflow-x:hidden;
+  overflow-x:auto;
   padding:10px;
   background:#e5e7eb;
   -webkit-overflow-scrolling:touch;
   overscroll-behavior:contain;
-  touch-action:pan-y;
+  touch-action:pan-x pan-y;
 }
 
 .pdf-status{
@@ -532,7 +538,7 @@ select{
 
 .pdf-page-canvas{
   display:block;
-  max-width:100%;
+  max-width:none;
   height:auto;
   margin:0 auto;
   background:#fff;
@@ -544,6 +550,48 @@ body.pdf-split-open #pdfSideFrame{
   display:none;
 }
 
+
+
+.pdf-zoom-controls{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  padding:3px;
+  border-radius:12px;
+  background:#f1f5f2;
+}
+
+#pdfZoomOutBtn,
+#pdfZoomInBtn{
+  min-width:36px;
+  padding-left:8px;
+  padding-right:8px;
+  font-size:19px;
+  line-height:1;
+}
+
+#pdfZoomResetBtn{
+  min-width:58px;
+  padding-left:8px;
+  padding-right:8px;
+  font-size:13px;
+}
+
+#pdfZoomOutBtn:disabled,
+#pdfZoomInBtn:disabled{
+  opacity:.4;
+}
+
+@media (min-width:768px) and (orientation:landscape) and (max-width:1050px){
+  .pdf-side-header{
+    align-items:flex-start;
+  }
+
+  .pdf-side-actions{
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+}
 
 /* ========================================
    左右境界ドラッグ調整
