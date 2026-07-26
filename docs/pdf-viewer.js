@@ -3,6 +3,8 @@ const PDFJS_CACHE = "textbook-pdfjs-runtime-v1";
 const PDFJS_MODULE_URL = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/legacy/build/pdf.mjs`;
 const PDFJS_WORKER_URL = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/legacy/build/pdf.worker.mjs`;
 const PDF_CACHE = "textbook-pdf-files-v1";
+const OFFLINE_PROMPT_KEY = "textbook-offline-prompt-v1";
+const OFFLINE_READY_KEY = "textbook-offline-ready-v1";
 
 let pdfjsLibPromise = null;
 let pdfModuleBlobUrl = "";
@@ -110,7 +112,6 @@ async function cacheAllTextbookPdfs(onProgress) {
   const panel = document.getElementById("pdfSidePanel");
   const closeBtn = document.getElementById("pdfSideCloseBtn");
   const fullscreenBtn = document.getElementById("pdfFullscreenBtn");
-  const offlineBtn = document.getElementById("pdfOfflineBtn");
   const renderArea = document.getElementById("pdfRenderArea");
   const heading = document.getElementById("pdfSideTitle");
   if (!panel || !closeBtn || !fullscreenBtn || !renderArea || !heading) return;
@@ -121,6 +122,7 @@ async function cacheAllTextbookPdfs(onProgress) {
   let loadSerial = 0;
   let resizeTimer = null;
   let preparingOffline = false;
+  let offlinePromptInProgress = false;
 
   function isAppleMobile() {
     return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
@@ -203,13 +205,13 @@ async function cacheAllTextbookPdfs(onProgress) {
       if (serial === loadSerial) {
         const message = navigator.onLine
           ? "PDFを表示できませんでした。もう一度押すか「全画面」をお試しください。"
-          : "オフライン表示の準備ができていません。ネット接続中に「オフライン準備」を押してください。";
+          : "このPDFはまだ端末に保存されていません。ネット接続中にもう一度開いてください。";
         showStatus(message, true);
       }
     }
   }
 
-  function openPdf({ key = "1-1", title = "教本PDF" } = {}) {
+  async function openPdf({ key = "1-1", title = "教本PDF" } = {}) {
     if (!/^[12]-(?:[1-9]|1[0-9]|2[0-2])$/.test(key)) return;
 
     const pdfUrl = `./pdf/${key}.pdf`;
@@ -223,6 +225,7 @@ async function cacheAllTextbookPdfs(onProgress) {
       const lessonPane = document.querySelector(".lesson-pane");
       if (lessonPane) lessonPane.scrollTop = 0;
 
+      await offerOfflinePreparationOnce();
       requestAnimationFrame(() => loadPdf(pdfUrl));
       return;
     }
@@ -252,8 +255,7 @@ async function cacheAllTextbookPdfs(onProgress) {
     }
 
     preparingOffline = true;
-    if (offlineBtn) offlineBtn.disabled = true;
-    showStatus("オフライン準備を開始しています…");
+    showStatus("教本PDFをオフラインで使えるように保存しています…");
 
     try {
       const result = await cacheAllTextbookPdfs(({ completed, total, failed }) => {
@@ -261,8 +263,10 @@ async function cacheAllTextbookPdfs(onProgress) {
       });
 
       if (result.failed === 0) {
-        showStatus("オフライン準備が完了しました。Wi-Fiを切っても右側にPDFを表示できます。");
+        localStorage.setItem(OFFLINE_READY_KEY, "1");
+        showStatus("保存が完了しました。これからはオフラインでも教本PDFを表示できます。");
       } else {
+        localStorage.removeItem(OFFLINE_READY_KEY);
         showStatus(`準備は完了しましたが、${result.failed}件を保存できませんでした。通信状態を確認してもう一度押してください。`, true);
       }
     } catch (error) {
@@ -270,7 +274,47 @@ async function cacheAllTextbookPdfs(onProgress) {
       showStatus("オフライン準備に失敗しました。通信状態と端末の空き容量を確認してください。", true);
     } finally {
       preparingOffline = false;
-      if (offlineBtn) offlineBtn.disabled = false;
+    }
+  }
+
+  async function hasAllOfflinePdfs() {
+    if (!("caches" in window)) return false;
+    try {
+      const cache = await caches.open(PDF_CACHE);
+      const urls = [
+        ...Array.from({ length: 22 }, (_, i) => new URL(`./pdf/1-${i + 1}.pdf`, location.href).href),
+        ...Array.from({ length: 16 }, (_, i) => new URL(`./pdf/2-${i + 1}.pdf`, location.href).href)
+      ];
+      const matches = await Promise.all(urls.map(url => cache.match(url)));
+      return matches.every(Boolean);
+    } catch (error) {
+      console.warn("Offline PDF cache check failed:", error);
+      return false;
+    }
+  }
+
+  async function offerOfflinePreparationOnce() {
+    if (offlinePromptInProgress || preparingOffline) return;
+    if (localStorage.getItem(OFFLINE_READY_KEY) === "1") return;
+
+    if (await hasAllOfflinePdfs()) {
+      localStorage.setItem(OFFLINE_READY_KEY, "1");
+      return;
+    }
+
+    if (localStorage.getItem(OFFLINE_PROMPT_KEY)) return;
+    localStorage.setItem(OFFLINE_PROMPT_KEY, "shown");
+
+    if (!navigator.onLine) return;
+
+    offlinePromptInProgress = true;
+    const accepted = window.confirm(
+      "教本PDFをオフラインでも使えるように端末へ保存しますか？\n\n「OK」を押すと全38項目を保存します。Wi-Fi接続中に行うことをおすすめします。"
+    );
+    offlinePromptInProgress = false;
+
+    if (accepted) {
+      await prepareOffline();
     }
   }
 
@@ -305,11 +349,9 @@ async function cacheAllTextbookPdfs(onProgress) {
 
   window.openTextbookPdf = openPdf;
   window.closeTextbookPdf = closePdf;
-  window.prepareTextbookOffline = prepareOffline;
 
   closeBtn.addEventListener("click", closePdf);
   fullscreenBtn.addEventListener("click", openFullscreenPdf);
-  offlineBtn?.addEventListener("click", prepareOffline);
   landscapeTablet.addEventListener?.("change", handleLayoutChange);
   window.addEventListener("resize", handleResize, { passive: true });
 })();
