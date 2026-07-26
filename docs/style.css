@@ -439,7 +439,7 @@ select{
     flex:1 1 auto;
     min-height:0;
     display:grid;
-    grid-template-columns:minmax(340px,45fr) minmax(440px,55fr);
+    grid-template-columns:minmax(300px,var(--lesson-pane-width,45%)) 14px minmax(360px,1fr);
     align-items:stretch;
     gap:12px;
     overflow:hidden;
@@ -542,4 +542,62 @@ select{
 /* 旧iframe用指定を無効化 */
 body.pdf-split-open #pdfSideFrame{
   display:none;
+}
+
+
+/* ========================================
+   左右境界ドラッグ調整
+   iPadは指、PCはマウスで操作可能
+   ======================================== */
+.split-divider{
+  display:none;
+}
+
+@media (min-width:768px) and (orientation:landscape){
+  body.pdf-split-open .split-divider{
+    display:flex;
+    min-width:14px;
+    height:100%;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    border:0;
+    border-radius:999px;
+    background:transparent;
+    cursor:col-resize;
+    touch-action:none;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+
+  body.pdf-split-open .split-divider::before{
+    content:"";
+    position:absolute;
+    inset:0 4px;
+    border-radius:999px;
+    background:#cbd5d1;
+    transition:background .15s, transform .15s;
+  }
+
+  body.pdf-split-open .split-divider-handle{
+    position:relative;
+    z-index:1;
+    width:6px;
+    height:54px;
+    border-radius:999px;
+    background:var(--green);
+    box-shadow:0 1px 4px rgba(0,0,0,.22);
+  }
+
+  body.pdf-split-open .split-divider:active::before,
+  body.pdf-split-open .split-divider.dragging::before,
+  body.pdf-split-open .split-divider:focus-visible::before{
+    background:#9fcab0;
+    transform:scaleX(1.25);
+  }
+
+  body.split-resizing,
+  body.split-resizing *{
+    cursor:col-resize !important;
+  }
 }

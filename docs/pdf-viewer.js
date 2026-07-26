@@ -114,7 +114,9 @@ async function cacheAllTextbookPdfs(onProgress) {
   const fullscreenBtn = document.getElementById("pdfFullscreenBtn");
   const renderArea = document.getElementById("pdfRenderArea");
   const heading = document.getElementById("pdfSideTitle");
-  if (!panel || !closeBtn || !fullscreenBtn || !renderArea || !heading) return;
+  const contentLayout = document.querySelector(".content-layout");
+  const divider = document.getElementById("splitDivider");
+  if (!panel || !closeBtn || !fullscreenBtn || !renderArea || !heading || !contentLayout || !divider) return;
 
   const landscapeTablet = window.matchMedia("(min-width: 768px) and (orientation: landscape)");
   let currentPdfUrl = "";
@@ -123,6 +125,48 @@ async function cacheAllTextbookPdfs(onProgress) {
   let resizeTimer = null;
   let preparingOffline = false;
   let offlinePromptInProgress = false;
+  const SPLIT_WIDTH_KEY = "textbook-split-width-v1";
+  let activePointerId = null;
+
+
+
+  function clampLessonPercent(percent) {
+    const layoutWidth = contentLayout.getBoundingClientRect().width;
+    if (!layoutWidth) return 45;
+    const minLeftPercent = Math.max(28, (300 / layoutWidth) * 100);
+    const maxLeftPercent = Math.min(68, 100 - (360 / layoutWidth) * 100);
+    return Math.min(Math.max(percent, minLeftPercent), maxLeftPercent);
+  }
+
+  function setLessonWidth(percent, { save = true } = {}) {
+    const safePercent = clampLessonPercent(percent);
+    contentLayout.style.setProperty("--lesson-pane-width", `${safePercent}%`);
+    divider.setAttribute("aria-valuenow", String(Math.round(safePercent)));
+    divider.setAttribute("aria-valuemin", "28");
+    divider.setAttribute("aria-valuemax", "68");
+    if (save) localStorage.setItem(SPLIT_WIDTH_KEY, String(safePercent));
+  }
+
+  function restoreLessonWidth() {
+    const saved = Number(localStorage.getItem(SPLIT_WIDTH_KEY));
+    setLessonWidth(Number.isFinite(saved) && saved > 0 ? saved : 45, { save: false });
+  }
+
+  function updateWidthFromClientX(clientX) {
+    const rect = contentLayout.getBoundingClientRect();
+    if (!rect.width) return;
+    setLessonWidth(((clientX - rect.left) / rect.width) * 100);
+  }
+
+  function finishDividerDrag(event) {
+    if (activePointerId === null) return;
+    try { divider.releasePointerCapture(activePointerId); } catch (_error) {}
+    activePointerId = null;
+    divider.classList.remove("dragging");
+    document.body.classList.remove("split-resizing");
+    handleResize();
+    event?.preventDefault?.();
+  }
 
   function isAppleMobile() {
     return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
@@ -221,6 +265,7 @@ async function cacheAllTextbookPdfs(onProgress) {
       heading.textContent = title;
       panel.setAttribute("aria-hidden", "false");
       document.body.classList.add("pdf-split-open");
+      restoreLessonWidth();
 
       const lessonPane = document.querySelector(".lesson-pane");
       if (lessonPane) lessonPane.scrollTop = 0;
@@ -354,4 +399,45 @@ async function cacheAllTextbookPdfs(onProgress) {
   fullscreenBtn.addEventListener("click", openFullscreenPdf);
   landscapeTablet.addEventListener?.("change", handleLayoutChange);
   window.addEventListener("resize", handleResize, { passive: true });
+
+  divider.addEventListener("pointerdown", (event) => {
+    if (!landscapeTablet.matches || !document.body.classList.contains("pdf-split-open")) return;
+    activePointerId = event.pointerId;
+    divider.setPointerCapture(event.pointerId);
+    divider.classList.add("dragging");
+    document.body.classList.add("split-resizing");
+    updateWidthFromClientX(event.clientX);
+    event.preventDefault();
+  });
+
+  divider.addEventListener("pointermove", (event) => {
+    if (activePointerId !== event.pointerId) return;
+    updateWidthFromClientX(event.clientX);
+    event.preventDefault();
+  });
+
+  divider.addEventListener("pointerup", finishDividerDrag);
+  divider.addEventListener("pointercancel", finishDividerDrag);
+
+  divider.addEventListener("dblclick", () => {
+    setLessonWidth(45);
+    handleResize();
+  });
+
+  divider.addEventListener("keydown", (event) => {
+    const current = Number.parseFloat(getComputedStyle(contentLayout).getPropertyValue("--lesson-pane-width")) || 45;
+    if (event.key === "ArrowLeft") {
+      setLessonWidth(current - (event.shiftKey ? 5 : 2));
+      handleResize();
+      event.preventDefault();
+    } else if (event.key === "ArrowRight") {
+      setLessonWidth(current + (event.shiftKey ? 5 : 2));
+      handleResize();
+      event.preventDefault();
+    } else if (event.key === "Home") {
+      setLessonWidth(45);
+      handleResize();
+      event.preventDefault();
+    }
+  });
 })();
