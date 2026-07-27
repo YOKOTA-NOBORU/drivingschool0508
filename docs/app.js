@@ -237,10 +237,12 @@ addSpeechStyles();
 document.querySelectorAll(".stage").forEach(button=>{
   button.onclick=()=>{
     stopSpeech();
+    const pdfWasOpen=document.body.classList.contains("pdf-split-open");
     currentStage=Number(button.dataset.stage);
     currentKey=stageItems()[0]?.key||"";
     visibleKinds=new Set(["説明"]);
     render();
+    if(pdfWasOpen) syncOpenPdfToCurrentItem();
     window.scrollTo({top:0,behavior:"smooth"});
   };
 });

@@ -139,6 +139,10 @@ async function cacheAllTextbookPdfs(onProgress) {
   let lessonFollowPausedUntil = 0;
   let pageObserver = null;
   let observedVisiblePage = 1;
+  let pinchStartDistance = 0;
+  let pinchStartZoom = 1;
+  let pinchTargetZoom = 1;
+  let pinchActive = false;
 
   function updateZoomControls() {
     zoomResetBtn.textContent = `${Math.round(zoomLevel * 100)}%`;
@@ -456,6 +460,39 @@ async function cacheAllTextbookPdfs(onProgress) {
     }, 80);
   }
 
+  function touchDistance(touchA, touchB) {
+    return Math.hypot(touchB.clientX - touchA.clientX, touchB.clientY - touchA.clientY);
+  }
+
+  function beginPinchZoom(event) {
+    if (event.touches.length !== 2 || !currentDocument) return;
+    pinchStartDistance = touchDistance(event.touches[0], event.touches[1]);
+    if (!pinchStartDistance) return;
+    pinchStartZoom = zoomLevel;
+    pinchTargetZoom = zoomLevel;
+    pinchActive = true;
+    event.preventDefault();
+  }
+
+  function updatePinchZoom(event) {
+    if (!pinchActive || event.touches.length !== 2) return;
+    const distance = touchDistance(event.touches[0], event.touches[1]);
+    if (!distance || !pinchStartDistance) return;
+    const rawZoom = pinchStartZoom * (distance / pinchStartDistance);
+    pinchTargetZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, rawZoom));
+    zoomResetBtn.textContent = `${Math.round(pinchTargetZoom * 100)}%`;
+    event.preventDefault();
+  }
+
+  function finishPinchZoom(event) {
+    if (!pinchActive) return;
+    if (event.touches && event.touches.length >= 2) return;
+    pinchActive = false;
+    setZoom(pinchTargetZoom);
+    updateZoomControls();
+    event.preventDefault();
+  }
+
   window.openTextbookPdf = openPdf;
   window.closeTextbookPdf = closePdf;
 
@@ -469,6 +506,10 @@ async function cacheAllTextbookPdfs(onProgress) {
   window.addEventListener("resize", handleResize, { passive: true });
 
   renderArea.addEventListener("scroll", schedulePdfFollow, { passive: true });
+  renderArea.addEventListener("touchstart", beginPinchZoom, { passive: false });
+  renderArea.addEventListener("touchmove", updatePinchZoom, { passive: false });
+  renderArea.addEventListener("touchend", finishPinchZoom, { passive: false });
+  renderArea.addEventListener("touchcancel", finishPinchZoom, { passive: false });
 
   const lessonPane = document.querySelector(".lesson-pane");
   const pauseLessonFollow = () => { lessonFollowPausedUntil = Date.now() + 4000; };
